@@ -1,6 +1,6 @@
-//pin connect block.c
-//FUNCTION DEFINITIONS
+//--------------------------pin connect block.c------------------------------------------------
 
+//FUNCTION DEFINITIONS
 #include "types.h"
 #include <lpc21xx.h>
 void cfgportpin(u32 portno, u32 pinno, u32 pinfunc)
