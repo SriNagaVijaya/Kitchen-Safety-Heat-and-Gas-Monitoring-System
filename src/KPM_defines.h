@@ -1,5 +1,6 @@
-//KPM pin defines
+//----------------------KPM_defines.h-----------------------------------
 
+//KPM pin defines
 #define ROW0 16 //p1.16
 #define ROW1 17
 #define ROW2 18
