@@ -1,4 +1,4 @@
-//function definitions
+//-------------------------------LCD.c----------------------------------------
 
 #include "types.h"
 #include "delay.h"
