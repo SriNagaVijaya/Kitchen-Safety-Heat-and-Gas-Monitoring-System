@@ -34,8 +34,7 @@ event_type_t last_event_type = EVENT_NONE;
 s32 last_event_value = 0;         
 s32 last_event_hour, last_event_min, last_event_sec;
 
-// SECTION 4: SIMPLE MILLISECOND CLOCK
-
+// SIMPLE MILLISECOND CLOCK
 void setup_clock(void)
 {
     T0TCR = 1<<1;     // reset the timer
@@ -49,12 +48,11 @@ u32 time_now(void)
 }
 
 
-// SECTION 5: BUZZER, LED, SWITCH2
-
+//BUZZER, LED, SWITCH2
 void setup_alarm_pins(void)
 {
-    IODIR0 |= 1<<BUZZER_PIN;        // buzzer pin = output
-    IODIR0 |= 1<<LED_PIN;           // led pin = output
+    IODIR0 |= 1<<BUZZER_PIN;       
+    IODIR0 |= 1<<LED_PIN;           
     IODIR0 &= ~(1<<SWITCH2_PIN);    // switch2 pin (P0.3) = input
 }
 
@@ -71,7 +69,6 @@ void alarm_off(void)
 }
 
 // Switch2 is active-low: pressed = 0 (pin pulled to ground)
-// Reads from PORT 0 because P0.3 lives on port 0.
 u32 is_switch2_pressed(void)
 {
     if (((IOPIN0 >> SWITCH2_PIN) & 1) == 0)
@@ -79,8 +76,7 @@ u32 is_switch2_pressed(void)
     return 0;
 }
 
-// SECTION 6: SWITCH1 INTERRUPT (opens the settings menu)
-
+//SWITCH1 INTERRUPT (opens the settings menu)
 void switch1_interrupt(void) __irq
 {
     open_menu_flag = 1;   // just raise the flag
@@ -90,19 +86,18 @@ void switch1_interrupt(void) __irq
 
 void setup_switch1(void)
 {
-    PINSEL0 |= 3<<(1*2);            // make pin P0.1 act as an interrupt pin
-    VICIntSelect &= ~(1<<14);       // use normal interrupt, not fast one
-    VICIntEnable  = 1<<14;          // turn this interrupt ON
+    PINSEL0 |= 3<<(1*2);                      // make pin P0.1 act as an interrupt pin
+    VICIntSelect &= ~(1<<14);                 // use normal interrupt, not fast one
+    VICIntEnable  = 1<<14;                    // turn this interrupt ON
     VICVectAddr0  = (u32)switch1_interrupt;  // which function to call
-    VICVectCntl0  = 1<<5 | 14;      // give it a priority slot
+    VICVectCntl0  = 1<<5 | 14;               // give it a priority slot
 }
 
 
-// SECTION 7: GAS SENSOR (MQ2)
-
+//GAS SENSOR (MQ2)
 void setup_gas_sensor(void)
 {
-    PINSEL1 |= AIN2;   // pin P0.29 will read an analog signal
+    PINSEL1 |= AIN2;   // pin P0.29 
 }
 
 u32 read_gas_raw(void)
@@ -114,9 +109,7 @@ u32 read_gas_raw(void)
     return raw_value;
 }
 
-// SECTION 8: TEMPERATURE DISPLAY HELPER
-
-// Prints a temperature value followed by a degree symbol and "C"
+//TEMPERATURE DISPLAY 
 void print_temp_c(s32 value)
 {
     S32LCD(value);
@@ -125,8 +118,7 @@ void print_temp_c(s32 value)
 }
 
 
-// SECTION 9: STARTUP SPLASH SCREENS
-
+// STARTUP SPLASH SCREENS
 // Scrolls one line of text across line 2, right to left, one full pass
 void scroll_text_line2(u8* text)
 {
@@ -178,8 +170,7 @@ void show_splash_screen(void)
     WRITE_LCD_CMD(CLEAR_LCD);
 }
 
-// SECTION 10: SAVE AND SHOW THE LAST ALARM EVENT
-
+//SAVE AND SHOW THE LAST ALARM EVENT
 void save_temp_event(s32 temp_c)
 {
     s32 h, m, s;
@@ -205,8 +196,6 @@ void save_gas_event(u32 gas_status)   // gas_status is 0 or 1
 }
 
 // Prints the last saved event to the LCD.
-// The caller (main loop) only calls this when last_event_type is
-// NOT EVENT_NONE - see SECTION 14.
 void show_last_event(void)
 {
     WRITE_LCD_CMD(CLEAR_LCD);
@@ -231,7 +220,7 @@ void show_last_event(void)
 }
 
 
-// SECTION 11: CHECK IF TEMPERATURE OR GAS IS DANGEROUS
+//CHECK IF TEMPERATURE OR GAS IS DANGEROUS
 void check_for_danger(s32 temp_c, u32 gas_raw)
 {
     if (temp_c > temp_limit_now && was_temp_high == 0)
@@ -274,10 +263,9 @@ void check_for_danger(s32 temp_c, u32 gas_raw)
     }
 }
 
-// SECTION 12: NORMAL SCREEN
+//NORMAL SCREEN
 //   Line 1: HH:MM:SS T:<value><deg>C
 //   Line 2: DD/MM/YY S:0/1
-
 void show_normal_screen(s32 temp_c,s32 gas_raw)
 {
     s32 h, m, s, dd, mo, yy;
@@ -290,7 +278,7 @@ void show_normal_screen(s32 temp_c,s32 gas_raw)
     if (s < 10)  WRITE_LCD_DATA('0'); S32LCD(s);
     StrLCD((u8*)" T:");
     print_temp_c(temp_c);
-    StrLCD((u8*)"  ");   // pad - clears any leftover chars from the ALERT screen
+    StrLCD((u8*)"  ");   
 
     WRITE_LCD_CMD(GOTO_LINE2_POS0);
     if (dd < 10) WRITE_LCD_DATA('0'); S32LCD(dd); WRITE_LCD_DATA('/');
@@ -298,16 +286,10 @@ void show_normal_screen(s32 temp_c,s32 gas_raw)
     S32LCD(yy);
     StrLCD((u8*)" S:");
     U32LCD(was_gas_high);   // 0 = safe, 1 = unsafe
-    StrLCD((u8*)"  ");      // pad - clears any leftover chars from the ALERT screen
-	  /*S32LCD(yy % 100);              // 2-digit year, to leave room for the gas value
-    StrLCD((u8*)" G:");
-    U32LCD(gas_raw);   */             // the actual MQ2 reading, 0-1023
-	  
-	
+    StrLCD((u8*)"  ");      
 }
 
-// SECTION 13: SETTINGS MENU (password + edit options)
-
+// SETTINGS MENU (password + edit options)
 u32 ReadNumClearable(void)
 {
     u32 key;
@@ -328,7 +310,7 @@ u32 ReadNumClearable(void)
         {
             if (digit_count > 0)
             {
-                sum = sum / 10;                 // drop the last digit numerically
+                sum = sum / 10;                
                 digit_count--;
 
                 WRITE_LCD_CMD(GOTO_LINE2_POS0 + digit_count);
@@ -401,7 +383,6 @@ u32 ask_for_password(void)
 }
 
 // Asks for a number on line 2, under a label on line 1.
-// Keeps asking again until the number is between min_val and max_val.
 u32 ask_ranged_number(u8* label, u32 min_val, u32 max_val)
 {
     u32 value;
@@ -440,49 +421,49 @@ void edit_rtc_info(void)
 
         choice = KeyScan();
 
-        if (choice == '1')                          // Hour
+        if (choice == '1')                         
         {
             GetRTCTimeInfo(&h, &m, &s);
             h = ask_ranged_number((u8*)"HOUR (0-23):", 0, 23);
             SetRTCTimeInfo(h, m, s);
         }
-        else if (choice == '2')                      // Minute
+        else if (choice == '2')                     
         {
             GetRTCTimeInfo(&h, &m, &s);
             m = ask_ranged_number((u8*)"MINUTE (0-59):", 0, 59);
             SetRTCTimeInfo(h, m, s);
         }
-        else if (choice == '3')                      // Second
+        else if (choice == '3')                     
         {
             GetRTCTimeInfo(&h, &m, &s);
             s = ask_ranged_number((u8*)"SECOND (0-59):", 0, 59);
             SetRTCTimeInfo(h, m, s);
         }
-        else if (choice == '4')                      // Date
+        else if (choice == '4')                     
         {
             GetRTCDateInfo(&dd, &mo, &yy);
             dd = ask_ranged_number((u8*)"DATE (1-31):", 1, 31);
             SetRTCDateInfo(dd, mo, yy);
         }
-        else if (choice == '5')                      // Month
+        else if (choice == '5')                     
         {
             GetRTCDateInfo(&dd, &mo, &yy);
             mo = ask_ranged_number((u8*)"MONTH (1-12):", 1, 12);
             SetRTCDateInfo(dd, mo, yy);
         }
-        else if (choice == '6')                      // Year
+        else if (choice == '6')                     
         {
             GetRTCDateInfo(&dd, &mo, &yy);
             yy = ask_ranged_number((u8*)"YEAR:", 2000, 2099);
             SetRTCDateInfo(dd, mo, yy);
         }
-        else if (choice == '7')                      // Exit
+        else if (choice == '7')                      
         {
             return;
         }
         else
         {
-            continue;   // key not recognized, just redraw the menu
+            continue;   
         }
 
         WRITE_LCD_CMD(CLEAR_LCD);
@@ -524,7 +505,7 @@ void edit_password(void)
         WRITE_LCD_CMD(CLEAR_LCD);
         StrLCD((u8*)"Wrong Password");
         delay_ms(1500);
-        return;   // stop here - never even asks for a new password
+        return;   
     }
 
     WRITE_LCD_CMD(CLEAR_LCD);
@@ -566,32 +547,31 @@ void show_menu(void)
 
         start_time = time_now();
         key = 0;
-        last_shown_seconds = 0xFFFFFFFF;   // force the first draw
+        last_shown_seconds = 0xFFFFFFFF;   
 
         while (1)
         {
             elapsed = time_now() - start_time;
             remaining_ms = (elapsed < MENU_WAIT_TIME) ? (MENU_WAIT_TIME - elapsed) : 0;
-            seconds_left = (remaining_ms + 999) / 1000;   // round up to whole seconds
+            seconds_left = (remaining_ms + 999) / 1000; 
 
             if (seconds_left != last_shown_seconds)
             {
                 last_shown_seconds = seconds_left;
-                // countdown lives on LINE 1, right after this label
                 WRITE_LCD_CMD(GOTO_LINE1_POS0);
                 StrLCD((u8*)"1.RTC 2.SETPT");
                 U32LCD(seconds_left);
-                WRITE_LCD_DATA(' ');   // erases a leftover digit when it drops from 2 digits to 1
+                WRITE_LCD_DATA(' ');   
             }
 
-            if (ColScan() == 0)     // a key is being pressed right now
+            if (ColScan() == 0)     
             {
                 key = KeyScan();
                 break;
             }
             if (elapsed > MENU_WAIT_TIME)
             {
-                key = 0;            // countdown reached 0 with no key
+                key = 0;            
                 break;
             }
         }
@@ -603,7 +583,7 @@ void show_menu(void)
         else if (key == '3')
             edit_password();
         else
-            return;   // key '4', timeout, or anything else -> back to normal screen
+            return;   
     }
 }
 
@@ -617,13 +597,13 @@ void open_settings_menu(void)
         if (ask_for_password())
         {
             show_menu();
-            break;   // menu finished (Exit or timeout) - back to normal screen
+            break;  
         }
 
         wrong_tries++;
 
         WRITE_LCD_CMD(CLEAR_LCD);
-        StrLCD((u8*)"Access Denied");   // exact wording from the project spec
+        StrLCD((u8*)"Access Denied");  
         alarm_on();
         delay_ms(500);
         alarm_off();
@@ -632,38 +612,30 @@ void open_settings_menu(void)
         {
             u32 seconds_left;
 
-            WRITE_LCD_CMD(CLEAR_LCD);           // clear ONCE, not every second
+            WRITE_LCD_CMD(CLEAR_LCD);           
             WRITE_LCD_CMD(GOTO_LINE1_POS0);
-            StrLCD((u8*)"System Locked");       // exact wording from the project spec,
-                                                  // fixed text, drawn once
-
+            StrLCD((u8*)"System Locked");       
             for (seconds_left = 10; seconds_left >= 1; seconds_left--)
             {
-                WRITE_LCD_CMD(GOTO_LINE2_POS0); // only this number gets redrawn
+                WRITE_LCD_CMD(GOTO_LINE2_POS0); 
                 StrLCD((u8*)"Wait:");
                 U32LCD(seconds_left);
-                StrLCD((u8*)"  ");               // pad - erases a leftover digit (10 -> 9, etc.)
+                StrLCD((u8*)"  ");               
                 delay_ms(1000);
             }
 
-            wrong_tries = 0;   // fresh 3 attempts next time
-            // loop back around to ask_for_password() again - does NOT
-            // return to the normal screen
+            wrong_tries = 0;   
         }
-        // otherwise loop back and ask for the password again
     }
 
     WRITE_LCD_CMD(CLEAR_LCD);
 }
 
-// SECTION 14: MAIN PROGRAM
-
+//MAIN PROGRAM
 int main(void)
 {
     s32 temp_c;
     u32 gas_raw;
-    //u32 rtc_was_reset;
-
     u32 showing_popup;
     u32 popup_started_at;
     u32 last_popup_check;
@@ -672,13 +644,13 @@ int main(void)
     Init_LCD();
     Init_ADC();
     setup_gas_sensor();
-    RTC_Init();   // 1 = first ever start, 0 = kept running through power-off
+    RTC_Init();   
     Init_KPM();
     setup_alarm_pins();
     setup_clock();
     setup_switch1();
-        SetRTCTimeInfo(9, 37, 0);
-        SetRTCDateInfo(24, 9, 2026);
+    SetRTCTimeInfo(9, 37, 0);
+    SetRTCDateInfo(24, 9, 2026);
 
     // show the two-part splash screen once at power-up
     show_splash_screen();
@@ -688,7 +660,6 @@ int main(void)
 
     while (1)
     {
-        // ---- Switch1 pressed? handle settings menu first ----
         if (open_menu_flag)
         {
             open_settings_menu();
@@ -705,8 +676,6 @@ int main(void)
         check_for_danger(temp_c, gas_raw);
 
         // ---- decide what to show on the screen ----
-        // showing_popup == 0 -> normal/alert screen
-        // showing_popup == 1 -> last-event screen, shown for POPUP_FOR ms
         if (showing_popup)
         {
             alarm_off();
