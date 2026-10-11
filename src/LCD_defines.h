@@ -1,4 +1,4 @@
-//LCD_defines.h
+//----------------------LCD_defines.h--------------------------------------
 
 //LCD pin defines
 #define LCD_DATA 8
