@@ -1,4 +1,4 @@
-// KITCHEN SAFETY PROJECT - main.c
+//---------------------------main.c-------------------------------------------------------------
 
 #include <lpc21xx.h>
 #include "types.h"
@@ -11,39 +11,19 @@
 #include "KPM.h"
 #include "RTC.h"
 
-// SECTION 1: SIMPLE SETTINGS
 
-#define TEMP_LIMIT      40     // buzzer+LED turn ON above this many degrees C
-#define GAS_LIMIT       300    // buzzer+LED turn ON above this gas reading (0-1023)
-
-#define DEFAULT_PASSWORD 1234  // starting password (can be changed from the menu)
-
-#define MENU_WAIT_TIME  30000  // 30 seconds to pick a menu option
-#define POPUP_EVERY     10000  // show last event every 10 seconds
-#define POPUP_FOR       3000   // show it for 3 seconds (fits the 2-3 sec ask)
-
-#define SPLASH_HOLD_MS  2000   // how long screen 1 of the splash stays up
-
-#define BUZZER_PIN      27     // P0.22 - kept away from P0.28, which the
-                                 // ADC driver reserves as an analog pin (AIN1)
-#define LED_PIN         25    // P0.30
-#define SWITCH2_PIN     3      // P0.3 (silences buzzer, active-low)
-// Switch1 always uses pin P0.1 - it is wired as a hardware interrupt
-
-// SECTION 2: EVENT TYPE
-
+// EVENT TYPE
 typedef enum {
     EVENT_NONE = 0,   // nothing has happened yet
     EVENT_TEMP = 1,   // last danger was high temperature
     EVENT_GAS  = 2    // last danger was high gas
 } event_type_t;
 
-// SECTION 3: SHARED VARIABLES
-
+//SHARED VARIABLES
 volatile u32 open_menu_flag = 0;  // becomes 1 the moment Switch1 is pressed
 
-u32 was_temp_high = 0;   // 1 = temperature is currently above the limit
-u32 was_gas_high  = 0;   // 1 = gas reading is currently above the limit
+u32 was_temp_high = 0;   
+u32 was_gas_high  = 0;  
 
 s32 temp_limit_now = TEMP_LIMIT;  // can be changed later from the menu
 u32 gas_limit_now  = GAS_LIMIT;   // can be changed later from the menu
@@ -51,7 +31,7 @@ u32 password_now   = DEFAULT_PASSWORD;  // can be changed later from the menu
 
 // Remembers the most recent alarm event
 event_type_t last_event_type = EVENT_NONE;
-s32 last_event_value = 0;         // temp in C, or gas status 0/1
+s32 last_event_value = 0;         
 s32 last_event_hour, last_event_min, last_event_sec;
 
 // SECTION 4: SIMPLE MILLISECOND CLOCK
