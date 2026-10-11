@@ -1,4 +1,5 @@
-//ADC defines.h
+//-------------------------ADC defines.h---------------------------------------------
+
 //CLK defines
 #define FOSC 12000000
 #define CCLK (5*FOSC)
