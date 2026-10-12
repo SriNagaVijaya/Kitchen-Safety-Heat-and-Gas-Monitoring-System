@@ -8,6 +8,7 @@
 #include "LCD.h"
 #include "LM35.h"
 #include "LCD_defines.h"
+#include "LED,SW,BUZZ_defines.h"
 #include "KPM.h"
 #include "RTC.h"
 
