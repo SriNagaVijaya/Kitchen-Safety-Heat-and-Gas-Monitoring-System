@@ -1,1320 +1,161 @@
-# Kitchen Safety – Heat and Gas Monitoring & Alert System
-
-## 1. Project Overview
-
-The **Kitchen Safety – Heat and Gas Monitoring & Alert System** is an embedded safety project developed using the **NXP LPC2148 ARM7 microcontroller**.
-
-The system continuously monitors:
-
-- Kitchen temperature using an **LM35 temperature sensor**
-- Gas/smoke level using an **MQ-2 gas sensor**
-- Current date and time using the **LPC2148 RTC**
-- User commands through a **4×4 matrix keypad**
-- System status through a **16×2 LCD**
-- Unsafe conditions through a **buzzer and LED indication**
-
-When a temperature or gas value crosses its configured safety limit, the system generates an alert. The project also records the latest safety event together with the RTC time at which the event occurred.
-
-The system includes a password-protected **Edit Mode**, allowing authorized users to change parameters such as sensor thresholds and RTC settings.
-
----
-
-## 2. Aim
-
-To design and implement a smart kitchen safety system using the **LPC2148 microcontroller** that continuously monitors temperature and gas levels, detects hazardous conditions, records threshold-crossing events with RTC timestamps, periodically displays the latest safety event, and provides timely alerts.
-
----
-
-## 3. Objectives
-
-### Temperature Monitoring
-Continuously measure kitchen temperature using the LM35 sensor and detect abnormal heat levels.
-
-### Gas Leakage Detection
-Monitor combustible gas/smoke levels using the MQ-2 sensor.
-
-### Alert Mechanism
-Generate an immediate warning through the buzzer and LED indication when an unsafe condition is detected.
-
-### Event Recording
-When a monitored value changes from a safe condition to an unsafe condition, record:
-
-- Sensor responsible for the event
-- Sensor value at the event
-- RTC hour
-- RTC minute
-- RTC second
-
-### User Configuration
-Provide a secure menu through which authorized users can modify system parameters.
-
-### Safety Enhancement
-Provide a low-cost embedded solution for improving kitchen safety.
-
----
-
-# 4. System Block Diagram
-
-```text
-             +----------------------+
-             |      LM35 Sensor     |
-             | Temperature Sensing  |
-             +----------+-----------+
-                        |
-                        v
-                 +------+------+
-                 |             |
-                 |   LPC2148   |
-                 | ARM7 MCU    |
-                 |             |
-                 | ADC         |
-                 | RTC         |
-                 | GPIO        |
-                 | EINT        |
-                 +--+---+---+--+
-                    |   |   |
-          ----------+   |   +----------------
-          |              |                    |
-          v              v                    v
-   +-------------+  +----------+       +-------------+
-   |   16x2 LCD  |  |  Buzzer  |       | LED Alert   |
-   | Display     |  |  Alarm   |       | Indication  |
-   +-------------+  +----------+       +-------------+
-          ^
-          |
-   +------+------+
-   |   Keypad    |
-   |    4x4      |
-   +-------------+
-
-             +----------------------+
-             |       MQ-2 Sensor    |
-             | Gas / Smoke Sensing  |
-             +----------+-----------+
-                        |
-                        v
-                       ADC
-```
-
-> The project documentation specifies a DC motor/exhauster concept for ventilation, but also specifies using LEDs instead of the DC motor in the implemented setup.
-
----
-
-# 5. Hardware Requirements
-
-| Component | Purpose |
-|---|---|
-| LPC2148 | Main ARM7 microcontroller |
-| 16×2 LCD | Displays sensor values, RTC information, menus and alerts |
-| 4×4 Matrix Keypad | User input and menu navigation |
-| Switch | Used for system control / edit-mode operation |
-| LEDs | Visual alert indication |
-| MQ-2 | Gas/smoke sensing |
-| LM35 | Temperature sensing |
-| Buzzer | Audible safety alert |
-| USB-UART Converter / DB-9 | Serial communication/programming support |
-
----
-
-# 6. Software Requirements
-
-- Embedded C
-- Keil/ARM development environment
-- Flash Magic
-- LPC2148 device support
-- Proteus can be used for simulation where the required sensor models are available
-
----
-
-# 7. Main System Working
-
-The application operates continuously.
-
-```text
-                    START
-                      |
-                      v
-             Initialize peripherals
-                      |
-        +-------------+-------------+
-        |             |             |
-        v             v             v
-       LCD           ADC           RTC
-        |             |             |
-        +-------------+-------------+
-                      |
-                      v
-              Read temperature
-                from LM35
-                      |
-                      v
-                 Read gas
-                 from MQ-2
-                      |
-                      v
-             Compare with limits
-                      |
-          +-----------+-----------+
-          |                       |
-       SAFE                    UNSAFE
-          |                       |
-          v                       v
-   Normal display        Buzzer + LED alert
-          |                       |
-          +-----------+-----------+
-                      |
-                      v
-             Check new event
-                      |
-                      v
-           Save event + RTC time
-                      |
-                      v
-        Periodically show latest event
-                      |
-                      v
-             Check user input
-                      |
-          +-----------+-----------+
-          |                       |
-        EDIT                   NORMAL
-          |                       |
-          v                       |
-       Password                  |
-       verification              |
-          |                       |
-          v                       |
-     Edit parameters              |
-          |                       |
-          +-----------+-----------+
-                      |
-                      v
-                 Repeat loop
-```
-
----
-
-# 8. Temperature Monitoring – LM35
-
-The LM35 is used as the temperature sensing device.
-
-The controller reads the sensor output through the LPC2148 ADC.
-
-```text
-LM35
- |
- | Analog voltage
- v
-LPC2148 ADC
- |
- | Digital ADC value
- v
-Temperature calculation
- |
- v
-Temperature in °C
- |
- v
-Compare with TEMP_LIMIT
- |
- +------ Safe ------> Normal operation
- |
- +---- Unsafe ------> Alarm condition
-```
-
-The temperature threshold can be configured by the user through the protected edit menu.
-
----
-
-# 9. Gas Monitoring – MQ-2
-
-The MQ-2 is used for detecting combustible gas/smoke conditions.
-
-```text
-MQ-2
- |
- | Analog sensor output
- v
-LPC2148 ADC
- |
- v
-Digital ADC value
- |
- v
-Gas-level processing
- |
- v
-Compare with GAS_LIMIT
- |
- +------ Safe ------> Normal operation
- |
- +---- Unsafe ------> Alarm condition
-```
-
-The MQ-2 output is read through the ADC and compared with the configured gas safety limit.
-
----
-
-# 10. ADC Block
-
-The LPC2148 contains an internal ADC that converts analog sensor voltages into digital values.
-
-The ADC block is used by both the LM35 and MQ-2 sensing sections.
-
-```text
-Analog Sensor
-      |
-      v
-  ADC Channel
-      |
-      v
-Sample & Convert
-      |
-      v
-Digital Value
-      |
-      v
-Application Processing
-```
-
-The project contains:
-
-- `ADC.c`
-- `ADC.h`
-- `ADC_defines.h`
-
-These files form the ADC driver/interface section of the project.
-
----
-
-# 11. LCD Block
-
-The 16×2 LCD is the main user interface.
-
-It can display:
-
-- Project/startup information
-- Temperature
-- Gas value
-- RTC time/date
-- Safety status
-- Edit menus
-- Password prompts
-- Access-denied messages
-- Latest safety event
-
-LCD-related files:
-
-```text
-LCD.c
-LCD.h
-LCD_defines.h
-```
-
-The LCD driver isolates low-level LCD operations from the application code.
-
----
-
-# 12. RTC Block
-
-The LPC2148 RTC is used to maintain real-time information.
-
-The project uses RTC information for:
-
-- Current time
-- Date
-- Month
-- Year
-- Event timestamp
-
-When a safety event occurs, the system stores the RTC information associated with that event.
-
-Example:
-
-```text
-Temperature exceeds limit
-          |
-          v
-     Event detected
-          |
-          v
-    Read RTC values
-          |
-          v
-Store:
-Sensor + Value + Hour + Minute + Second
-```
-
-RTC-related files:
-
-```text
-RTC.c
-RTC.h
-```
-
----
-
-# 13. Keypad / KPM Block
-
-The 4×4 matrix keypad is used as the user input device.
-
-It can be used for:
-
-- Password entry
-- Menu navigation
-- Threshold modification
-- RTC modification
-- Password change
-- Selecting edit options
-
-Keypad-related files:
-
-```text
-KPM.c
-KPM.h
-KPM_defines.h
-```
-
-The keypad driver handles the low-level row/column scanning, while the application decides what each key means.
-
----
-
-# 14. LM35 Driver Block
-
-The LM35-specific files are:
-
-```text
-LM35.c
-LM35.h
-```
-
-The driver provides the interface required by the application to obtain temperature information from the LM35 sensor.
-
-The overall data path is:
-
-```text
-LM35
-  |
-  v
-ADC
-  |
-  v
-ADC Digital Value
-  |
-  v
-LM35 Driver
-  |
-  v
-Temperature Value
-  |
-  v
-main.c
-```
-
----
-
-# 15. Alarm Block
-
-The alarm mechanism provides immediate feedback when an unsafe condition occurs.
-
-```text
-Temperature unsafe
-        OR
-Gas unsafe
-        |
-        v
-   Alarm condition
-        |
-        +------> Buzzer
-        |
-        +------> LED
-```
-
-The alarm can be silenced using the configured switch operation.
-
-The project source contains alarm-related functions such as:
-
-```c
-alarm_on();
-alarm_off();
-```
-
-The application also checks the alarm state continuously during normal operation.
-
----
-
-# 16. Safety Event Recording
-
-One important feature of the project is that it does not simply keep the buzzer ON whenever a sensor is above its threshold.
-
-The application detects a **threshold-crossing event**.
-
-Conceptually:
-
-```text
-SAFE
- |
- | sensor crosses configured limit
- v
-UNSAFE
- |
- v
-Create event record
- |
- +--> Sensor name
- +--> Sensor value
- +--> RTC hour
- +--> RTC minute
- +--> RTC second
-```
-
-The stored event represents the most recent safety event.
-
-The event information is updated when a new threshold-crossing event occurs.
-
----
-
-# 17. Periodic Event Popup
-
-During normal operation, the LCD continuously displays the live monitoring information.
-
-After a configured interval, the system temporarily displays the latest safety event.
-
-The project specification defines:
-
-- Event popup interval: approximately 10 seconds
-- Popup duration: approximately 2–3 seconds
-
-Example:
-
-```text
-NORMAL SCREEN
-Temperature: 31.5 C
-Gas: 245
-Time: 18:32:10
-
-        |
-        | periodic popup
-        v
-
-LAST EVENT
-TEMP HIGH
-Value: 42.5 C
-Time: 18:31:47
-
-        |
-        | after popup
-        v
-
-NORMAL SCREEN
-```
-
-This allows the user to see the latest important safety event without permanently replacing the live monitoring screen.
-
----
-
-# 18. Edit Mode
-
-The project provides an external-switch-based edit mechanism.
-
-When the user presses the configured switch:
-
-```text
-Switch1 Pressed
-       |
-       v
-External Interrupt
-       |
-       v
-Enter Edit Mode
-       |
-       v
-Password Request
-```
-
-The external interrupt allows the application to respond to the switch without depending only on normal polling.
-
-The project contains an interrupt-related function such as:
-
-```c
-switch1_interrupt()
-```
-
----
-
-# 19. Password Protection
-
-Edit Mode is protected using a basic password.
-
-```text
-Enter Edit Mode
-      |
-      v
-Enter Password
-      |
-      v
-Compare Password
-      |
-   +--+--+
-   |     |
-Correct Wrong
-   |     |
-   v     v
-Allow   Deny
-Edit    Access
-          |
-          v
-     Wrong attempt++
-```
-
-This prevents unauthorized modification of safety thresholds and RTC settings.
-
----
-
-# 20. Wrong Password Handling
-
-The documented security flow uses a wrong-attempt counter.
-
-When the password is incorrect:
-
-1. Access is denied.
-2. The wrong-attempt counter is incremented.
-3. The LCD displays an access-denied message.
-4. An optional buzzer/LED indication can be used.
-
-After **3 incorrect attempts**, the system can lock Edit Mode temporarily or until reset.
-
-```text
-Wrong password
-      |
-      v
-Attempt count++
-      |
-      v
-Is count >= 3?
-   /        \
- NO          YES
- |            |
- v            v
-Try again   System Locked
-```
-
----
-
-# 21. Editable Parameters
-
-After successful password verification, the user can access the configuration menu.
-
-The documented editable parameters include:
-
-- Current RTC time
-- Day/date
-- Sensor threshold values
-- Password change option
-
-The keypad is used to navigate through the menu and enter values.
-
-After editing:
-
-```text
-Save Parameters
-      |
-      v
-Exit Edit Mode
-      |
-      v
-Return to Normal Monitoring
-```
-
----
-
-# 22. Project File Structure
-
-The repository contains separate files for different hardware/software modules.
-
-```text
-ARM---Mini-Project/
-│
-├── ADC.c
-├── ADC.h
-├── ADC_defines.h
-│
-├── KPM.c
-├── KPM.h
-├── KPM_defines.h
-│
-├── LCD.c
-├── LCD.h
-├── LCD_defines.h
-│
-├── LM35.c
-├── LM35.h
-│
-├── RTC.c
-├── RTC.h
-│
-├── delay.c
-├── delay.h
-│
-├── pin_connect_block.c
-├── pin_connect_block.h
-│
-├── defines.h
-├── types.h
-│
-├── main.c
-│
-└── README.md
-```
-
----
-
-# 23. File-by-File Explanation
-
-## `main.c`
-
-This is the **main application file**.
-
-It coordinates the complete project.
-
-Responsibilities include:
-
-- System initialization
-- Sensor monitoring
-- Temperature safety checking
-- Gas safety checking
-- LCD screen handling
-- RTC information handling
-- Alarm control
-- Event recording
-- Event popup handling
-- Switch handling
-- Edit-mode control
-- Password/security flow
-
-In simple terms:
-
-```text
-All drivers
-    |
-    v
- main.c
-    |
-    +--> Read sensors
-    +--> Check safety
-    +--> Control alarm
-    +--> Display information
-    +--> Record events
-    +--> Handle user input
-```
-
----
+🏠🔥 Kitchen Safety Heat & Gas Monitoring System
+An LPC2148-based embedded system for kitchen temperature and gas monitoring system.
+**Monitor. Detect. Alert. Record.**
 
-## `ADC.c`
+📌 Project Overview
+The **Kitchen Safety Heat & Gas Monitoring System** is an embedded safety project built around the **LPC2148 ARM7 microcontroller**. It monitors kitchen temperature using an **LM35 temperature sensor** and gas levels using an **MQ-2 gas sensor**.
 
-Contains the ADC driver implementation.
+The measured information and real-time clock (RTC) date/time are shown on a 16×2 LCD. If a configured temperature or gas threshold is crossed, the system activates a buzzer and LED alert. It also records the latest threshold-crossing event with an RTC timestamp and displays that event periodically.
 
-It handles the low-level ADC operations required to read analog sensor values.
+A password-protected settings menu allows the user to adjust the RTC, sensor thresholds, and password through a 4×4 matrix keypad.
 
-Used by:
+🎯 Objectives
+• 🌡️ Continuously monitor kitchen temperature with the LM35.
+• 💨 Monitor the analog output of the MQ-2 gas sensor.
+• 🚨 Indicate unsafe temperature or gas readings using the buzzer, LED, and LCD.
+• 🕒 Display RTC time and date.
+• 🧾 Store the most recent unsafe threshold-crossing event and its time.
+• 🔐 Protect configuration changes with a keypad-entered password.
+• ⚙️ Allow the user to edit RTC settings and temperature/gas thresholds.
 
-- LM35
-- MQ-2
+🧰 Hardware Components
+Component	Purpose
+🧠 LPC2148 (ARM7) -->	Reads sensors and coordinates the system
+🌡️  LM35 -->	Provides an analog signal proportional to temperature
+💨 MQ-2 gas sensor -->	Provides an analog signal related to gas/smoke concentration
+📟 16×2 LCD --> Displays time, date, temperature, gas status, menus, and alerts
+⌨️ 4×4 matrix keypad -->	Password entry and settings-menu navigation
+🔔 Buzzer -->	Audible alert when an unsafe condition is detected
+💡 LED -->	Visual alarm indication
+🕒 On-chip RTC -->	Provides time/date for the display and event records
+🔌 Power supply / development board -->	Powers the controller and connected modules
+
+🖥️ Software & Tools
+• Language: Embedded C
+• Target controller: LPC2148
+• IDE/toolchain: Keil µVision or a compatible ARM7 toolchain
+• Programming utility: Flash Magic (as listed in the project requirements)
+• Simulation (optional): Proteus, depending on component/model availability
+
+🧩 System Block Diagram
+
+Kitchen safety system block diagram
+
+🧪 Hardware Prototype
 
----
+Kitchen safety system hardware prototype
+
+Main signal flow: LM35 and MQ-2 provide sensor signals to the LPC2148. The controller reads analog values through its ADC, checks configured thresholds, and updates the LCD and alarm outputs. The RTC supplies date/time information, while the keypad and switch provide user input.
 
-## `ADC.h`
+🔄 Program Flowchart
+The flowchart below describes the main program behaviour implemented in `main.c`.
 
-Contains the declarations/interface of ADC functions used by other modules.
 
----
+flowchart TD
 
-## `ADC_defines.h`
 
-Contains ADC-related definitions such as channel/configuration constants used by the ADC module.
+  
 
----
 
-## `LCD.c`
+⚙️ How It Works
 
-Contains the LCD driver implementation.
+1. **🚀 Startup:** The firmware initializes the LCD, ADC, gas-sensor input, RTC, keypad, timer, interrupt input, buzzer, and LED. Startup screens are shown.
 
-It handles low-level communication with the 16×2 LCD.
+2. **🌡️ Temperature sampling:** The LM35 analog output is read through the ADC. The temperature conversion in `LM35.c` uses the ADC voltage multiplied by 100.
 
-Typical LCD operations include:
+3. **💨 Gas sampling:** The MQ-2 analog reading is obtained through the ADC and compared with the configured gas threshold.
 
-```text
-Initialize LCD
-Send command
-Send data
-Display string
-Move cursor
-Clear display
-```
+4. **🚨 Hazard detection:** When a reading crosses from safe to above its configured threshold, the firmware records the event and activates the buzzer/LED alert.
 
----
+5. **📟 LCD monitoring:** The LCD displays RTC time/date, temperature, and a gas unsafe-status indicator.
 
-## `LCD.h`
+6. **🧾 Event display:** The latest recorded temperature or gas event and its timestamp are shown periodically for approximately three seconds.
 
-Contains LCD function declarations used by application code.
+7. **🔕 Alarm silencing:** Switch 2 is checked as the alarm-silence input in the main loop. The alarm may turn on again while an unsafe condition remains active, according to the program logic.
 
----
+8. **🔐 Secure settings:** Switch 1 requests the settings menu. The user must enter the password using the keypad. Three incorrect attempts trigger a lockout countdown.
 
-## `LCD_defines.h`
+9. **⚙️ Configuration:** After successful password validation, the user can edit RTC fields, temperature/gas thresholds, or the password.
 
-Contains LCD-specific constants and definitions.
+🚦 Alarm & LCD Indicators
+Indicator	Meaning
+🌡️ `TEMP IS HIGH!`	Temperature crossed the configured temperature limit
+💨 `GAS IS HIGH!`	MQ-2 reading crossed the configured gas limit
+🔔 Buzzer ON	Audible warning output is active
+💡 LED ON	Visual warning output is active
+🔐 `Enter Password:`	Settings access is requesting a password
+⛔ `Access Denied`	Password validation failed
+🔒 `System Locked`	Three failed attempts occurred; countdown is displayed
+🧾 Latest event popup	Shows the most recently saved event and time
+🧑‍💻 Source Files
+File	Responsibility
+`main.c`	Main application, initialization, monitoring loop, alarms, event logging, password check, and settings menu
+`LCD.c`	LCD command/data writes, initialization, and number/string display helpers
+`ADC.c`	ADC initialization and conversion of analog input to a 10-bit digital value
+`LM35.c`	LM35 temperature conversion helpers
+`KPM.c`	4×4 keypad scanning and key lookup
+`RTC.c`	RTC initialization and time/date read/write helpers
+> 📁 The source files shown above depend on project header files such as `types.h`, `LCD.h`, `LCD_defines.h`, `ADC.h`, `ADC_defines.h`, `LM35.h`, `KPM.h`, `KPM_defines.h`, `RTC.h`, and `delay.h`. Include the matching header and support files from your working project when building or uploading the complete source to GitHub.
 
----
-
-## `KPM.c`
-
-Contains the keypad driver implementation.
-
-It handles scanning of the 4×4 matrix keypad and identifying the pressed key.
-
----
-
-## `KPM.h`
-
-Contains keypad function declarations.
-
----
-
-## `KPM_defines.h`
-
-Contains keypad-related pin and configuration definitions.
-
----
-
-## `LM35.c`
-
-Contains the LM35 temperature-sensor driver/application interface.
-
-It provides temperature information to the main application.
-
----
-
-## `LM35.h`
-
-Contains LM35 function declarations and the interface used by `main.c`.
-
----
-
-## `RTC.c`
-
-Contains RTC-related implementation.
-
-It handles the real-time clock functions used for displaying current time/date and recording event timestamps.
-
----
-
-## `RTC.h`
-
-Contains RTC function declarations.
-
----
-
-## `delay.c`
-
-Contains software delay implementation.
-
-Delays are useful when hardware devices require timing gaps between operations.
-
----
-
-## `delay.h`
-
-Contains delay-function declarations.
-
----
-
-## `pin_connect_block.c`
-
-Contains the implementation associated with the LPC2148 **Pin Connect Block** configuration.
-
-The Pin Connect Block determines the function assigned to multiplexed LPC2148 pins.
-
-For example, a physical pin may be configured for:
-
-```text
-GPIO
-UART
-I2C
-SPI
-PWM
-External interrupt
-```
-
-depending on the pin's available alternate functions.
-
----
-
-## `pin_connect_block.h`
-
-Contains declarations/interface for the pin configuration module.
-
----
-
-## `types.h`
-
-Provides commonly used application-specific data types.
-
-Examples may include:
-
-```text
-u8   -> unsigned 8-bit type
-u16  -> unsigned 16-bit type
-u32  -> unsigned 32-bit type
-s8   -> signed 8-bit type
-s16  -> signed 16-bit type
-s32  -> signed 32-bit type
-```
-
-Using these names makes embedded code easier to understand and portable between modules.
-
----
-
-## `defines.h`
-
-Contains common project-level definitions and constants shared by multiple modules.
-
-Examples can include:
-
-- Pin numbers
-- Threshold constants
-- Project configuration values
-- Application-specific macros
-
----
-
-# 24. Software Architecture
-
-The project follows a modular embedded-C structure.
-
-```text
-                 APPLICATION LAYER
-                       |
-                    main.c
-                       |
-        +--------------+--------------+
-        |              |              |
-        v              v              v
-     Sensors         User I/O        RTC
-        |              |              |
-   +----+----+      +--+--+        RTC.c
-   |         |      |     |
-  LM35      MQ-2   LCD   KPM
-   |         |      |     |
-   +----+----+      +-----+
-        |
-       ADC
-        |
-     ADC Driver
-        |
-        v
-    LPC2148 Hardware
-```
-
-This separation makes the project easier to understand, test, debug and maintain.
-
----
-
-# 25. Safety Decision Logic
-
-The basic decision logic is:
-
-```text
-Read Temperature
-       |
-       v
-Temperature > TEMP_LIMIT?
-       |
-    +--+--+
-    |     |
-   YES    NO
-    |     |
-    v     |
-Temp unsafe
-    |     |
-    +-----+
-       |
-       v
-Read Gas
-       |
-       v
-Gas > GAS_LIMIT?
-       |
-    +--+--+
-    |     |
-   YES    NO
-    |     |
-    v     |
-Gas unsafe
-    |     |
-    +-----+
-       |
-       v
-If either condition is unsafe
-       |
-       v
-Activate alarm
-```
-
----
-
-# 26. Normal Operating Screen
-
-During normal operation, the LCD displays the current monitoring information.
-
-The project specification states that the normal display includes:
-
-- Current time
-- Live temperature
-- Live gas reading
-
-The screen periodically changes to the latest recorded safety event and then returns to the normal screen.
-
----
-
-# 27. Alert Silencing
-
-The alarm can be silenced using the configured switch.
-
-```text
-Unsafe condition
-      |
-      v
-Buzzer ON
-      |
-      v
-Switch2 pressed?
-   /          \
- NO           YES
- |             |
- v             v
-Keep alarm    Silence alarm
-```
-
-The sensor monitoring continues even after the audible alert is silenced.
-
----
-
-# 28. Startup Flow
-
-A typical startup sequence is:
-
-```text
-RESET
-  |
-  v
-Initialize GPIO
-  |
-  v
-Configure Pin Connect Block
-  |
-  v
-Initialize LCD
-  |
-  v
-Initialize ADC
-  |
-  v
-Initialize RTC
-  |
-  v
-Initialize Keypad
-  |
-  v
-Configure Alarm Pins
-  |
-  v
-Display Startup Information
-  |
-  v
-Enter Monitoring Loop
-```
-
----
-
-# 29. Complete Application Flow
-
-```text
-                 +---------+
-                 |  RESET  |
-                 +----+----+
-                      |
-                      v
-              Initialize System
-                      |
-                      v
-              Display Startup
-                      |
-                      v
-             +----------------+
-             | Normal Monitor |
-             +-------+--------+
-                     |
-             +-------+--------+
-             |                |
-             v                v
-       Read Temperature     Read Gas
-             |                |
-             +-------+--------+
-                     |
-                     v
-              Compare Limits
-                     |
-              +------+------+
-              |             |
-            SAFE          UNSAFE
-              |             |
-              |       +-----+-----+
-              |       |           |
-              |       v           v
-              |    Buzzer        LED
-              |       |
-              |       v
-              |   Alert state
-              |             |
-              +------+------+
-                     |
-                     v
-             Detect new event
-                     |
-                     v
-               Store event
-                     |
-                     v
-              Read RTC time
-                     |
-                     v
-          Periodic event popup
-                     |
-                     v
-             Check Switch 1
-                     |
-              +------+------+
-              |             |
-             NO            YES
-              |             |
-              |             v
-              |       External Interrupt
-              |             |
-              |             v
-              |        Password Check
-              |             |
-              |       +-----+-----+
-              |       |           |
-              |     WRONG       CORRECT
-              |       |           |
-              |       v           v
-              |    Deny       Edit Menu
-              |       |           |
-              |       |           v
-              |       |      Save Parameters
-              |       |           |
-              +-------+-----------+
-                      |
-                      v
-                Repeat Forever
-```
-
----
-
-# 30. Important Design Features
-
-### Modular Design
-Separate drivers are used for ADC, LCD, keypad, RTC, LM35, delays and pin configuration.
-
-### Real-Time Monitoring
-The LPC2148 continuously monitors sensor inputs.
-
-### Threshold-Based Safety
-The system identifies unsafe conditions by comparing sensor readings with configured limits.
-
-### Event Timestamping
-The RTC provides the time associated with a safety event.
-
-### Event Popup
-The latest event is periodically displayed without permanently interrupting the normal monitoring screen.
-
-### Password Protection
-System configuration is protected from unauthorized modification.
-
-### External Interrupt
-Switch1 can trigger entry into Edit Mode through an external interrupt.
-
-### Audible and Visual Alerts
-The buzzer and LED provide immediate safety indication.
-
----
-
-# 31. Programming / Build Flow
-
-A general development flow is:
-
-```text
-Write Embedded C
-      |
-      v
-Compile Source Files
-      |
-      v
-Link Object Files
-      |
-      v
-Generate HEX
-      |
-      v
-Program LPC2148
-      |
-      v
-Test Hardware
-      |
-      v
-Validate Sensor / Alarm / LCD / RTC
-```
-
-Flash Magic can be used for programming the LPC2148 with the generated firmware.
-
----
-
-# 32. Testing Checklist
-
-| Test | Expected Result |
-|---|---|
-| Power ON | System initializes and LCD starts |
-| LM35 temperature changes | Displayed temperature changes |
-| Temperature exceeds limit | Alarm condition occurs |
-| MQ-2 gas level changes | Gas reading changes |
-| Gas exceeds limit | Alarm condition occurs |
-| Switch2 pressed during alarm | Audible alarm is silenced |
-| Safety event occurs | Event information is recorded |
-| Event popup interval reached | Latest event is displayed temporarily |
-| Switch1 pressed | Edit Mode is requested |
-| Correct password | Edit menu is accessible |
-| Wrong password | Access is denied |
-| Three wrong attempts | System can enter lock condition |
-| RTC changes | Displayed time/date updates |
-| Threshold changed | New limit is used for monitoring |
-
----
-
-# 33. Future Enhancements
-
-Possible extensions include:
-
-- Automatic exhaust fan control using a relay/driver
-- GSM/SMS alert
-- IoT/cloud monitoring
-- Mobile application
-- EEPROM/Flash-based permanent event history
-- Multiple stored safety events
-- More advanced gas concentration calibration
-- Battery backup for RTC
-- Password lockout timer
-- Sensor fault detection
-- Non-volatile storage of configurable thresholds
-
----
-
-# 34. Applications
-
-This project can be adapted for:
-
-- Domestic kitchens
-- Restaurants
-- Hotels
-- Canteens
-- Food-processing areas
-- Small industrial kitchens
-- Gas-cylinder storage areas
-- Other environments requiring temperature and gas monitoring
-
----
-
-# 35. Key Concepts Demonstrated
-
-This project provides practical experience with:
-
-- ARM7TDMI / LPC2148
-- Embedded C
-- GPIO
-- ADC
-- RTC
-- LCD interfacing
-- Matrix keypad interfacing
-- LM35 interfacing
-- MQ-2 interfacing
-- Pin Connect Block
-- External interrupts
-- Buzzer and LED control
-- Threshold-based decision making
-- Event logging
-- Password-based access control
-- Modular driver development
-
----
-
-# 36. Conclusion
-
-The **Kitchen Safety – Heat and Gas Monitoring & Alert System** demonstrates how an ARM7-based embedded controller can combine multiple peripherals and sensors to create a practical safety application.
-
-The LPC2148 acts as the central controller, receiving sensor information through its ADC, maintaining real-time information through its RTC, displaying system information on a 16×2 LCD, accepting user input through a keypad/switch, and controlling the alarm indicators.
-
-The event-recording and password-protected configuration features make the project more than a simple sensor-monitoring application. The modular driver structure also provides a good foundation for extending the system with additional sensors, communication interfaces, storage and IoT features.
-
----
-
-## 37. Repository Structure at a Glance
-
-```text
-ARM---Mini-Project
-│
-├── ADC.c / ADC.h / ADC_defines.h
-│       └── ADC driver
-│
-├── KPM.c / KPM.h / KPM_defines.h
-│       └── 4×4 keypad driver
-│
-├── LCD.c / LCD.h / LCD_defines.h
-│       └── 16×2 LCD driver
-│
-├── LM35.c / LM35.h
-│       └── Temperature sensing
-│
-├── RTC.c / RTC.h
-│       └── Real-time clock
-│
-├── delay.c / delay.h
-│       └── Timing/delay functions
-│
-├── pin_connect_block.c / .h
-│       └── LPC2148 pin multiplexing
-│
-├── types.h
-│       └── Application data types
-│
-├── defines.h
-│       └── Common project definitions
-│
-├── main.c
-│       └── Main application and system control
-│
-└── README.md
-        └── Project documentation
-```
-
----
-
-## Author / Project
-
-**Kitchen Safety – Heat and Gas Monitoring & Alert System**
-
-**Controller:** LPC2148 ARM7  
-**Language:** Embedded C  
-**Sensors:** LM35 + MQ-2  
-**Display:** 16×2 LCD  
-**Input:** 4×4 Matrix Keypad + Switch  
-**Alert:** Buzzer + LEDs  
-**Timekeeping:** LPC2148 RTC
+🛠️ Configuration Values
+The current `main.c` defines these initial values:
+
+Setting	Initial value in source
+🌡️ Temperature threshold	`25` °C
+💨 Gas ADC threshold	`300` (10-bit ADC scale: 0–1023)
+🔐 Default password	`1234`
+🧾 Event popup interval	`10,000 ms` (10 seconds)
+🧾 Event popup duration	`3,000 ms` (3 seconds)
+⏳ Settings menu wait	`30,000 ms` (30 seconds)
+🔔 Buzzer output	P0.27, as defined in `main.c`
+💡 LED output	P0.25, as defined in `main.c`
+⌨️ Switch 2 input	P0.0, as defined in `main.c`
+⚡ Switch 1	External interrupt input, configured in `setup_switch1()`
+**Important:** Check the actual board wiring and pin-configuration header files before using these pin details. The comments in source files and the physical development board wiring should be verified against each other.
+
+🧪 Suggested Test Cases
+Test	Action	Expected behaviour
+1️⃣ Normal monitoring	Keep both readings below their limits	LCD continues showing time/date and temperature/status
+2️⃣ High temperature	Raise the LM35 reading above the configured limit	Temperature alert, buzzer/LED indication, and event timestamp
+3️⃣ High gas reading	Raise the MQ-2 analog reading above the configured limit	Gas alert, buzzer/LED indication, and event timestamp
+4️⃣ Event popup	Wait after at least one event has been recorded	Latest event appears periodically on the LCD
+5️⃣ Correct password	Press Switch 1 and enter the configured password	Settings menu opens
+6️⃣ Incorrect password	Enter an incorrect password	Access-denied message and brief alarm indication
+7️⃣ Three failed attempts	Enter an incorrect password three times	System Locked message and countdown
+8️⃣ Change threshold	Open settings and select a new limit	New threshold is used during subsequent checks
+9️⃣ Silence input	Press Switch 2 while an alarm is active	Alarm output is silenced while the input is detected; verify behaviour under persistent unsafe readings
+▶️ Build & Flash (General Steps)
+1. Create/open an LPC2148 project in Keil µVision or your chosen compatible toolchain.
+2. Add `main.c`, the driver `.c` files, and all required matching header/support files.
+3. Confirm the target device, startup file, clock settings, include paths, and pin mappings.
+4. Build the project and resolve any missing-header, linker, or device-configuration errors.
+5. Generate the appropriate output file (commonly HEX, depending on the toolchain settings).
+6. Use the board's supported programming method, such as Flash Magic where applicable, to program the LPC2148.
+7. Power the board and test each case above carefully.
+
+⚠️ Safety & Engineering Notes
+• MQ-2 readings depend on sensor warm-up, calibration, load resistance, environment, and the specific module. The configured ADC threshold is a project setting, **not a calibrated gas concentration in ppm**.
+
+• Test alarm behaviour using safe, controlled methods. Do not deliberately release flammable gas or create a fire hazard.
+
+• A development-board demonstration is not a substitute for certified gas detectors, smoke alarms, ventilation, or professional safety equipment.
+
+• Confirm sensor voltage levels and power requirements before connecting modules to the LPC2148.
+
+🚀 Future Improvements
+• 📈 Calibrate MQ-2 readings against a suitable reference and document the method.
+
+• 🌀 Drive a properly rated ventilation fan through a suitable driver stage and protection circuitry.
+
+• 💾 Store multiple event records in non-volatile memory.
+
+• 📡 Add remote notifications or wireless monitoring.
+
+• 🧪 Add repeatable calibration and fault-detection tests.
+
+• 🔐 Improve password handling and persistent configuration storage.
+
+👩‍🔧 Project Summary
+This project demonstrates the integration of **ARM7 microcontroller programming, ADC-based sensor acquisition, LCD interfacing, RTC timekeeping, keypad scanning, external interrupts, threshold checking, and alarm control** in one embedded application.
+
+🏡 Safer kitchens through embedded systems! 🔥💨🚨
