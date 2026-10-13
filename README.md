@@ -225,13 +225,6 @@ The gas value is an ADC reading, not a calibrated gas concentration in ppm.
 
 The 16x2 LCD displays sensor readings, gas status, time, date, and alert messages.
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/53544444-2789-4eed-94f6-908e30ecabc0" alt="LCD showing normal gas status" width="42%"/>
-  <img src="https://github.com/user-attachments/assets/b28a05b3-c1b9-410f-a31b-5f4dc8a626a8" alt="LCD showing high gas status" width="42%"/>
-</p>
-
-<p align="center"><em>Normal gas status and high gas status</em></p>
-
 ### 5. Alarm mute
 
 Switch 2 is an active-low input. When pressed, it can mute the buzzer and LED according to the implemented firmware behavior. Sensor monitoring should continue.
