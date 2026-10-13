@@ -56,12 +56,16 @@ Component	Purpose
 • Simulation (optional): Proteus, depending on component/model availability
 
 🧩 System Block Diagram
+
 ![image alt](https://github.com/SriNagaVijaya/Kitchen-Safety-Heat-and-Gas-Monitoring-System/blob/main/Block%20Diagram.png?raw=true)
-Kitchen safety system block diagram
+
+                                      Kitchen safety system block diagram
 
 🧪 Hardware Prototype
 
-Kitchen safety system hardware prototype
+![image alt](https://github.com/SriNagaVijaya/Kitchen-Safety-Heat-and-Gas-Monitoring-System/blob/main/Hardware%20Prototype.png?raw=true)
+
+                                    Kitchen safety system hardware prototype
 
 Main signal flow: LM35 and MQ-2 provide sensor signals to the LPC2148. The controller reads analog values through its ADC, checks configured thresholds, and updates the LCD and alarm outputs. The RTC supplies date/time information, while the keypad and switch provide user input.
 
@@ -71,9 +75,10 @@ The flowchart below describes the main program behaviour implemented in `main.c`
 
 flowchart TD
 
+
 ![image alt](https://github.com/SriNagaVijaya/Kitchen-Safety-Heat-and-Gas-Monitoring-System/blob/main/Flow%20chart.webp.png?raw=true)
   
-
+      
 
 ⚙️ How It Works
 
