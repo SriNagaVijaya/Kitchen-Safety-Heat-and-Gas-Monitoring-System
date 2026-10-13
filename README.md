@@ -116,14 +116,14 @@ Setting	Initial value in source
 🧪 Suggested Test Cases
 Test	Action	Expected behaviour
 1️⃣ Normal monitoring	Keep both readings below their limits	LCD continues showing time/date and temperature/status
-2️⃣ High temperature	Raise the LM35 reading above the configured limit	Temperature alert, buzzer/LED indication, and event timestamp
-3️⃣ High gas reading	Raise the MQ-2 analog reading above the configured limit	Gas alert, buzzer/LED indication, and event timestamp
+2️⃣ High temperature	Raise the LM35 reading above the configured limit	Temperature alert, buzzer/LED indication, and    event timestamp
+3️⃣ High gas reading	Raise the MQ-2 analog reading above the configured limit	Gas alert, buzzer/LED indication, and    event timestamp
 4️⃣ Event popup	Wait after at least one event has been recorded	Latest event appears periodically on the LCD
 5️⃣ Correct password	Press Switch 1 and enter the configured password	Settings menu opens
 6️⃣ Incorrect password	Enter an incorrect password	Access-denied message and brief alarm indication
 7️⃣ Three failed attempts	Enter an incorrect password three times	System Locked message and countdown
 8️⃣ Change threshold	Open settings and select a new limit	New threshold is used during subsequent checks
-9️⃣ Silence input	Press Switch 2 while an alarm is active	Alarm output is silenced while the input is detected; verify behaviour under persistent unsafe readings
+9️⃣ Silence input	Press Switch 2 while an alarm is active	Alarm output is silenced while the input is detected;         verify behaviour under persistent unsafe readings
 ▶️ Build & Flash (General Steps)
 1. Create/open an LPC2148 project in Keil µVision or your chosen compatible toolchain.
 2. Add `main.c`, the driver `.c` files, and all required matching header/support files.
@@ -144,15 +144,10 @@ Test	Action	Expected behaviour
 
 🚀 Future Improvements
 • 📈 Calibrate MQ-2 readings against a suitable reference and document the method.
-
 • 🌀 Drive a properly rated ventilation fan through a suitable driver stage and protection circuitry.
-
 • 💾 Store multiple event records in non-volatile memory.
-
 • 📡 Add remote notifications or wireless monitoring.
-
 • 🧪 Add repeatable calibration and fault-detection tests.
-
 • 🔐 Improve password handling and persistent configuration storage.
 
 👩‍🔧 Project Summary
