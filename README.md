@@ -71,7 +71,7 @@ The flowchart below describes the main program behaviour implemented in `main.c`
 
 flowchart TD
 
-
+![image alt](https://github.com/SriNagaVijaya/Kitchen-Safety-Heat-and-Gas-Monitoring-System/blob/main/Flow%20chart.webp.png?raw=true)
   
 
 
