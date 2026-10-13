@@ -2,8 +2,6 @@
 A password-protected kitchen safety monitor built on the LPC2148 (ARM7) microcontroller.
 Measures temperature and gas level, shows them live with a real-time clock, and raises a buzzer + LED alarm the moment a limit is crossed.
 
-MCU IDE Language Sensors
-
 Block diagram of the kitchen safety system
 System block diagram
 
@@ -228,3 +226,4 @@ Possible improvements
  Add a relay to switch off a gas valve
 👤 Author
 Sri Naga Vijaya Garapati
+![image alt](https://github.com/Balaji4680/ARM---Mini-Project#-overview)
