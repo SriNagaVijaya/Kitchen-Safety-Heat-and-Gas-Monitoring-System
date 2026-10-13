@@ -180,7 +180,7 @@ Test	Action	Expected behaviour
 
 8️⃣ Change threshold	Open settings and select a new limit	New threshold is used during subsequent checks
 
-9️⃣ Silence input	Press Switch 2 while an alarm is active	Alarm output is silenced while the input is detected; verify behaviour under           persistent unsafe readings
+9️⃣ Silence input	Press Switch 2 while an alarm is active	Alarm output is silenced while the input is detected; verify           behaviour under persistent unsafe readings
 
 ▶️ Build & Flash (General Steps)
 1. Create/open an LPC2148 project in Keil µVision or your chosen compatible toolchain.
