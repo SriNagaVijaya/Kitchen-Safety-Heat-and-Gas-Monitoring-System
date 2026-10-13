@@ -56,7 +56,7 @@ Component	Purpose
 • Simulation (optional): Proteus, depending on component/model availability
 
 🧩 System Block Diagram
-
+![image alt](https://github.com/SriNagaVijaya/Kitchen-Safety-Heat-and-Gas-Monitoring-System/blob/main/Block%20Diagram.png?raw=true)
 Kitchen safety system block diagram
 
 🧪 Hardware Prototype
