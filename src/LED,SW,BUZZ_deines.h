@@ -10,7 +10,7 @@
 
 #define SPLASH_HOLD_MS  2000   
 
-#define BUZZER_PIN      5     // P0.5 
+#define BUZZER_PIN      27    // P0.27 
 #define LED_PIN         25    // P0.30
 #define SWITCH2_PIN     3     // P0.3 (silences buzzer, active-low)
 
