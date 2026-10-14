@@ -98,12 +98,12 @@ The following assignments are documented for the project. Confirm all connection
 
 | Function | LPC2148 Pin or Channel | Description |
 |---|---|---|
-| Buzzer | `P0.28` | Digital output |
+| Buzzer | `P0.27` | Digital output |
 | Alarm LED | `P0.30` | Digital output |
 | Settings switch | `P0.1 / EINT0` | External interrupt input |
 | Alarm mute switch | `P0.3` | Active-low input |
 | MQ-2 sensor | `P0.29 / AIN2` | ADC channel 2 |
-| LM35 sensor | Defined in `LM35.c` | Confirm the ADC channel in the driver |
+| LM35 sensor | `P0.28` | Confirm the ADC channel in the driver |
 | LCD | Board LCD connections | Display interface |
 | Keypad | Board keypad connections | Matrix scanning |
 | RTC | LPC2148 RTC peripheral | Time and date |
